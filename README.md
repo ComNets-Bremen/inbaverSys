@@ -4,13 +4,21 @@
 Internet of Things (IoT). It consist of different modules implementing the behavior of
 the different CCN elements in the IoT. There are 3 types of node models implemented.
 
-- **Node** - implements of a traditional CCN node [link](node/README.md)
-- **Sensor** - implements of a CCN based sensor node [link](sensor/README.md)
-- **Gatewayr** - implements of a gateway that connects the tradional CCN nodes of the Internet and sensors of a sensor network [link](gateway/README.md)
+- **Node** - implements of a traditional CCN node [link](./node/README.md)
+- **Sensor** - implements of a CCN based sensor node [link](./sensor/README.md)
+- **Gateway** - implements of a gateway that connects the tradional CCN nodes of the Internet and sensors of a sensor network [link](./gateway/README.md)
 
 Details of these different node types, how thay can be installed and used are described in 
 their corresponding README files. Click on the **link** above to go the README.
 
+The following picture depicting a CCN based network topology shows the different CCN elements 
+that could be configured using the implementations in this repository.
+
+<p align="center">
+  <img src="./res/images/net-topology.png" width="600"/>
+</p>
+
+ 
 
 ## Questions or Comments
 
