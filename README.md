@@ -25,7 +25,7 @@ multiple modules based on the operation expected of the node. The following pict
 protocol layers and the possible modules that can be deployed. 
 
 <p align="center">
-  <img src="./res/images/protocol-stack.png" width="600"/>
+  <img src="./res/images/protocol-stack.png" width="500"/>
 </p>
 
 The description below explains purpose of the layers and the modules tha can be configured.
