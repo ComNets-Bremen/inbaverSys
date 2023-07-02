@@ -105,6 +105,87 @@ be similar to the **Standard Node** or to the **Sensor**. But, whatever procedur
 remember to copy the `settings.gateway.py` as `settings.py`.
 
 
+## Developing Modules
+
+The implementation has some basic models developed for each type of node. There are 3
+types of modules that can be developed (see **Implementation Architecture** picture above).
+
+- Application module
+- CCN module
+- Link module
+
+The **Application** and **Link** modules are considered as CCN **Faces** and therefor must register with the **CCN** module before they can receive messages.
+
+Below are some noteworthy information.
+
+#### Main Function
+
+The `main.py` implements the setup and coordination of the whole program. It uses the `settings.py` file to import the modules based on the configuration. The `main.py` has a function caled `dispatch(encap)` which is called by each CCN, application or link module when a message has to be passed between modules. The operation of this function is given below.
+
+```python:
+
+  # All layer handling modules (e.g. eth, tempreader, stdccn) will call 
+  # dispatch to deliver to their packets to other layer handling 
+  # modules. The encap must carry information about where to deliver.
+  def dispatch(encap):
+
+
+    # CCN module destined packet
+    if encap.to_direcion == common.DirectionType.TO_CCN:
+        ccnmodule.face_handler_ref.handle_msg(encap)
+
+    # application module destined packet, find from list
+    else if encap.to_direcion == common.DirectionType.TO_APP:
+        for modinfo in appmodules:
+            if encap.to_direction_module_name == modinfo.module_name:
+                modinfo.face_handler_ref.handle_msg(encap)
+
+    # link module destined packet, find from list
+    else if encap.to_direcion == common.DirectionType.TO_LINK:
+        for modinfo in linkmodules:
+            if encap.to_direction_module_name == modinfo.module_name:
+                modinfo.face_handler_ref.handle_msg(encap)
+
+```
+
+#### Setting up Modules (Applications and Links)
+
+Every module (i.e., CCN, Application and Link) must implement the `setup(dispatch)` function that is called by `main.py` to setup the the modules. This function must return an object that has a function called `handle_msg(encap)`. The general structure of the code is as follows.
+
+```python:
+  # setup app module & start the face handler thread
+  def setup(dispatch):
+    
+    # start app worker that generates interests
+    w = Worker(dispatch)
+    w.start()
+
+    # create the handler
+    handler = Handler(dispatch)
+    
+    # return the handler for main to call the 
+    # handle_msg function
+    return handler
+
+```
+
+#### Worker class
+
+The `Worker` class extends Python's `threading.Thread` class to implement a thread that performs the tasks of the application or link. In the case of an application, the thread first has to register the face with CCN layer by calling the `dispatch(encap)` function. Then, it may implement an endless loop to request for data, e.g., an application that regularly requests temperature. Or, the application may be a server that serves content, e.g., the gateway application that hosts temperature values.
+
+
+#### Handler class
+
+The `Handler` class implements the function of handling incomming messages. It implements the `handle_msg(encap)` function called by the CCN module.
+
+#### Example Code
+
+1. `tempreader.py` - shows an example of an application that requests data regularly
+2. `iotgwapp.py` - shows an application that serves content when requested
+3. `ipovereth.py` - shows a link implementation to send and receive packets over an IP socket
+4. `stdccn.py` - shows an implementation of a dummy CCN forwarder
+
+
 ## Caveat
 
 This is a work-in-progress. So, not all modules and informational files are implemented. 

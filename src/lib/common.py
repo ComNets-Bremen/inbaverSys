@@ -98,10 +98,10 @@ class DirectionType(Enum):
 class PacketEncap:
     def __init__(self):
         self.from_direction = None
-        self.from_direction_module_name = None
-        self.to_direction = None
-        self.to_direction_module_name = None
+        self.from_module_name = None
         self.from_face_id = None
+        self.to_direction = None
+        self.to_module_name = None
         self.to_face_id = None
         self.packet_contents = None
 
@@ -134,3 +134,11 @@ class ContentObject:
         self.name = None
         self.payload = None
 
+
+class FaceInfo:
+    def __init__(self):
+        self.face_id = None
+        self.face_module_name = None
+        self.prefix_served = None
+    
+    

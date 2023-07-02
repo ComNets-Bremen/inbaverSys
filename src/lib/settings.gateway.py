@@ -29,15 +29,17 @@ LINK_LAYER = ['wlan', 'lora']
 
 #----- app layer settings -----
 
-# sensor data caching application settings
-SENSORGW_FACE_ID = 'iotgwapp'
-SENSORGW_CACHE_ITEM_LIMIT = 100
-
-
+# settings of gateway application that stores and responds to sensor data
+IOTGWAPP_MODULE_NAME = 'iotgwapp'
+IOTGWAPP_FACE_ID = 'iotgwapp'
+IOTGWAPP_START_DELAY_SEC = 10
+IOTGWAPP_CACHE_ITEM_LIMIT = 100
+IOTGWAPP_SERVED_PREFIXES = ['ccn://comnets/s2120']
+IOTGWAPP_DATA_HOSTED = ['temperature', 'humidity']
+IOTGWAPP_DATA_RANGES = ['16.2:18.5', '78.5:80.5']
 
 
 #----- CCN layer settings -----
-
 
 # stdccn forwarder settings
 STDCCN_MODULE_NAME = 'stdccn'
@@ -46,13 +48,13 @@ STDCCN_CACHE_ITEM_LIMIT = 50
 
 #----- link layer settings -----
 
-# wlan link settings
-WLAN_MODULE_NAME = 'wlan'
-WLAN_FACE_IDS = ['wlan1', 'wlan2']
-WLAN_SSID = 'ComNets'
-WLAN_IP_COMM_PROTO = 'UDP'
-WLAN_LOCAL_PORT = 9000
-WLAN_IP_CONNECTIONS = ['192.168.1.1:9000', '192.168.1.2:9000']
+# IP over wlan link settings
+IPOVERWLAN_MODULE_NAME = 'ipoverwlan'
+IPOVERWLAN_FACE_IDS = ['wlan1', 'wlan2']
+IPOVERWLAN_SSID = 'ComNets'
+IPOVERWLAN_IP_COMM_PROTO = 'UDP'
+IPOVERWLAN_LOCAL_PORTS = [9000, 9001]
+IPOVERWLAN_IP_CONNECTIONS = ['192.168.1.1:9000', '192.168.1.2:9000']
 
 
 # lora link settings

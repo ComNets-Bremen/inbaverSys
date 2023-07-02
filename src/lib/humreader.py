@@ -20,7 +20,7 @@ def setup(dispatch):
     w.start()
 
     # create the handler
-    handler = Handler()
+    handler = Handler(dispatch)
     
     # return the handler for main to call the 
     # handle_msg function
@@ -83,23 +83,29 @@ class Worker(Thread):
 # handler to recive app packet
 class Handler:
     
+    # constructor 
+    def __init__(self, dispatch):
+        self.dispatch = dispatch
+
     # function handles when data received by this app
     def handle_msg(encap):
         
         # the app only expects ContentObject messages
         if type(encap.packet_contents) is ContentObject:
             
-            # process ContentObject
-            pass
-
             # log
             logmsg = settings.HUMREADER_MODULE_NAME + ':ContentObj received '
             common.log_activity(logmsg)
+            
+            # log ContentObject values
 
+            logmsg = settings.HUMREADER_MODULE_NAME + ':Content in message:Temperature ' + encap.packet_contents.payload
+            common.log_activity(logmsg)
+            
         # unknown message
         else:
             # log
-            logmsg = settings.HUMREADER_MODULE_NAME + ':Unknown message received to sent '
+            logmsg = settings.HUMREADER_MODULE_NAME + ':Unexpected message received '
             common.log_activity(logmsg)
             return
         

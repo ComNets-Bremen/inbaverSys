@@ -1,4 +1,4 @@
-# Implementation of a dummy Ethernet module handling multiple
+# Implementation of a Ethernet module handling multiple
 # faces. Each face is uniquely identified by an ID and each 
 # will have its corresponding IP next hop information.
 #
@@ -9,6 +9,7 @@
 import sys
 from threading import Thread
 from threading import Lock
+import socket
 sys.path.append('./lib')
 import settings
 import common
@@ -18,12 +19,12 @@ import common
 def setup(dispatch):
     
     # start all face handling workers
-    for faceindex in range(len(settings.ETH_FACE_IDS)):
+    for faceindex in range(len(settings.IPOVERETH_FACE_IDS)):
         w = Worker(faceindex, dispatch)
         w.start()
 
     # create the handler
-    handler = Handler()
+    handler = Handler(dispatch)
     
     # return the handler for main to call the 
     # handle_msg function
@@ -31,7 +32,7 @@ def setup(dispatch):
 
 
 # worker thread that listens to ports and gets 
-# packets arriving over the ports
+# packets arriving over the ports send up the stack
 class Worker(Thread):
     
     # constructor to get all parameters
@@ -46,15 +47,15 @@ class Worker(Thread):
         
         # create face registration message
         facereg = FaceRegistration()
-        facereg.face_id = settings.ETH_FACE_IDS[faceindex]
-        facereg.face_module_name = settings.ETH_MODULE_NAME
+        facereg.face_id = settings.IPOVERETH_FACE_IDS[faceindex]
+        facereg.face_module_name = settings.IPOVERETH_MODULE_NAME
         facereg.prefix_served = None
         
         # encapsulate registration message
         encap = common.PacketEncap()
         encap.from_direction = common.DirectionType.FROM_LINK
-        encap.from_direction_module_name = settings.ETH_MODULE_NAME
-        encap.from_face_id = settings.ETH_FACE_IDS[faceindex]
+        encap.from_direction_module_name = settings.IPOVERETH_MODULE_NAME
+        encap.from_face_id = settings.IPOVERETH_FACE_IDS[faceindex]
         encap.to_direction = common.DirectionType.TO_CCN
         encap.packet_contents = facereg
 
@@ -62,102 +63,133 @@ class Worker(Thread):
         with common.system_lock:
             dispatch(encap)
         
-        # create socket listen
-        pass
+        # create socket and bind to given port
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.bind(('', settings.IPOVERETH_LOCAL_PORTS[faceindex]))
         
         while True:
 
             # do blocking socket read
-            pass
+            byte_msg, addr = s.recvfrom(1024)
             
-            # create interest as if it was received from the socket
-            interestmsg = Interest()
-            interestmsg.prefix = 'ccn://comnets/s2120'
-            interestmsg.name = 'temperature'
-        
-            # encapsulate created message
-            encap = common.PacketEncap()
+            # convert message to string
+            msg_contents = byte_msg.decode('UTF-8')
+
+            # log
+            logmsg = settings.IPOVERETH_MODULE_NAME + ':Received message:Contents  ' + msg_contents
+            common.log_activity(logmsg)
+
+            # split message into components
+            msg_parts = msg_contents.split('::')
+            
+            # create encap message
             encap.from_direction = common.DirectionType.FROM_LINK
-            encap.from_direction_module_name = settings.ETH_MODULE_NAME
-            encap.from_face_id = settings.ETH_FACE_IDS[faceindex]
+            encap.from_direction_module_name = settings.IPOVERETH_MODULE_NAME
+            encap.from_face_id = settings.IPOVERETH_FACE_IDS[faceindex]
             encap.to_direction = common.DirectionType.TO_CCN
-            encap.packet_contents = interestmsg
-        
+            
+            # create message from received string
+            if msg_parts[0] == 'Interest':
+                interestmsg = Interest()
+                interestmsg.prefix = msg_parts[1]
+                interestmsg.name = msg_parts[2]
+                encap.packet_contents = interestmsg
+                
+            else if msg_parts[0] == 'ContentObject':
+                contentobjmsg = ContentObject()
+                contentobjmsg.prefix = msg_parts[1]
+                contentobjmsg.name = msg_parts[2]
+                contentobjmsg.payload = msg_parts[3]
+                encap.packet_contents = contentobjmsg
+
+            else:
+                # log
+                logmsg = settings.IPOVERETH_MODULE_NAME + ':Unknown message received'
+                common.log_activity(logmsg)
+                continue
+                    
             # lock and call function to process message
             with common.system_lock:
                 dispatch(encap)    
 
-            time.sleep(15)
-
 
 # handler to send packets out
 class Handler:
+
+    # constructor 
+    def __init__(self, dispatch):
+        self.dispatch = dispatch
     
     # function used to send packets to the given face
     def handle_msg(encap):
 
+        # find the faceindex from face id
+        found = False
+        faceindex = None
+        for i in range(len(settings.IPOVERETH_FACE_IDS)):
+            if settings.IPOVERETH_FACE_IDS[i] == encap.to_face_id:
+                found = True
+                faceindex = i
+                break
+        
+        # extract socket information
+        if found:
+            
+            # get ipaddress and port
+            ipaddress, port = settings.IPOVERETH_IP_CONNECTIONS[faceindex].split(':')
+            
+        else:
+            
+            # log
+            logmsg = settings.IPOVERETH_MODULE_NAME + ':Unknown face ID given'
+            common.log_activity(logmsg)
+            return
+            
+        # setup send socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        
+        # create address object with IP address and port
+        addr = (ipaddress, int(port))
 
         # build packet to send out
         msg_contents = ''
         
         # build Interest message
-        if type(encap.packet_contents) is Interest:
-            # create Interest packet
-            msg_contents = ''
+        if type(encap.packet_contents) is common.Interest:
             
             # log
-            logmsg = settings.ETH_MODULE_NAME + ':Interest received to be sent '
+            logmsg = settings.IPOVERETH_MODULE_NAME + ':Interest received to be sent over ' + encap.to_face_id
             common.log_activity(logmsg)
+            
+            # create Interest packet to send over IP
+            msg_contents = 'Interest::' + encap.packet_contents.prefix + '::' + encap.packet_contents.name
 
         # build ContentObject message
-        else if type(encap.packet_contents) is ContentObject:
-            # create Interest packet
-            msg_contents = ''
-
+        else if type(encap.packet_contents) is common.ContentObject:
+            
             # log
-            logmsg = settings.ETH_MODULE_NAME + ':ContentObj received to be sent '
+            logmsg = settings.IPOVERETH_MODULE_NAME + ':ContentObj received to be sent over ' + encap.to_face_id
             common.log_activity(logmsg)
+
+            # create Content Object packet to send over IP
+            msg_contents = 'Interest::' + encap.packet_contents.prefix + '::' + encap.packet_contents.name + '::' + encap.packet_contents.payload
 
         # unknown message
         else:
+            
             # log
-            logmsg = settings.ETH_MODULE_NAME + ':Unknown message received to sent '
+            logmsg = settings.IPOVERETH_MODULE_NAME + ':Unknown message received to sent '
             common.log_activity(logmsg)
+
+            # close socket
+            s.close()
             return
 
-        # find socket details related to sending face
-        found = False
-        faceindex = None
-        for i in range(len(settings.ETH_FACE_IDS)):
-
-            # if face is valid (exists) save it and exit loop
-            if settings.ETH_FACE_IDS[i] == encap.to_face_id:
-                faceindex = i
-                found = True
-                break
-
-        # if face found, send message
-        if found:
-                           
-            # get destination address and port information to use
-            ipaddress, port = settings.ETH_IP_CONNECTIONS[i].split(':')
-            
-            # open socket, send the created and close socket
-            pass
-
-            # log
-            logmsg = settings.ETH_MODULE_NAME + ':Unknown face specified '
-            common.log_activity(logmsg)
-
-
-        # non-existent face given
-        else:
-
-            # log
-            logmsg = settings.ETH_MODULE_NAME + ':Unknown face specified '
-            common.log_activity(logmsg)
-
-
+        # convert string to bytes to send
+        byte_msg = msg_contents.encode('UTF-8')
         
-        # temporary: wait for some time
-        time.sleep(5)
+        # send the packet
+        s.sendto(byte_msg, addr)
+        
+        # close socket
+        s.close()
