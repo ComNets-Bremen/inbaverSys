@@ -53,7 +53,8 @@ def main():
         # save references for later use
         modinfo = common.ModuleInfo()
         modinfo.module_name = module
-        modinfo.module_ref = link
+        modinfo.module_ref = ccn
+        modinfo.handler_ref = handler    
         ccnmodule = modinfo
 
         # load & setup each link module
@@ -68,7 +69,7 @@ def main():
             modinfo = common.ModuleInfo()
             modinfo.module_name = module
             modinfo.module_ref = link
-            modinfo.face_handler_ref = handler
+            modinfo.handler_ref = handler
             linkmodules.append(modinfo)
 
         # load and setup each application module
@@ -83,7 +84,7 @@ def main():
             modinfo = common.ModuleInfo()
             modinfo.module_name = module
             modinfo.module_ref = app
-            modinfo.face_handler_ref = handler
+            modinfo.handler_ref = handler
             appmodules.append(modinfo)
 
         # wait endlessly while the rest of the threads do their work
@@ -104,19 +105,21 @@ def dispatch(encap):
 
     # CCN module destined packet
     if encap.to_direcion == common.DirectionType.TO_CCN:
-        ccnmodule.face_handler_ref.handle_msg(encap)
+        ccnmodule.handler_ref.handle_msg(encap)
 
     # application module destined packet, find from list
     else if encap.to_direcion == common.DirectionType.TO_APP:
         for modinfo in appmodules:
             if encap.to_direction_module_name == modinfo.module_name:
-                modinfo.face_handler_ref.handle_msg(encap)
+                modinfo.handler_ref.handle_msg(encap)
+                break
 
     # link module destined packet, find from list
     else if encap.to_direcion == common.DirectionType.TO_LINK:
         for modinfo in linkmodules:
             if encap.to_direction_module_name == modinfo.module_name:
-                modinfo.face_handler_ref.handle_msg(encap)
+                modinfo.handler_ref.handle_msg(encap)
+                break
 
 
 if __name__ == "__main__":

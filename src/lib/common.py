@@ -112,7 +112,7 @@ class ModuleInfo:
     def __init__(self):
         self.module_name = None
         self.module_ref = None
-        self.face_handler_ref = None
+        self.handler_ref = None
 
 
 class FaceRegistration:
