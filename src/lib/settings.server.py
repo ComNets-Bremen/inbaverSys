@@ -33,11 +33,7 @@ LINK_LAYER = ['ipoverwlan', 'ipovereth']
 SERVER_MODULE_NAME = 'server'
 SERVER_FACE_ID = 'server'
 SERVER_START_DELAY_SEC = 20
-SERVER_DOC_REQ_INTERVAL_SEC = 30
-SERVER_SEGMENT_REQ_INTERVAL_SEC = 2
 SERVER_DATA_REQ_PREFIX = 'ccn://comnets/docs'
-SERVER_DATA_NAME_PREFIXES = 'lecture:paper:hackathon'
-SERVER_DATA_NAME_SUFFIX_RANGE = '300:900'
 
 
 #----- CCN layer settings -----

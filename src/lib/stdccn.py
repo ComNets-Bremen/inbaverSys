@@ -105,6 +105,7 @@ class Handler:
                 newinterest = common.Interest()
                 newinterest.prefix = encap.packet_contents.prefix
                 newinterest.name = encap.packet_contents.name
+                newinterest.seg_num = encap.packet_contents.seg_num
                 
                 # create a new PacketEncap
                 newencap = common.PacketEncap()
@@ -135,6 +136,7 @@ class Handler:
                 newcontentobj = common.ContentObject()
                 newcontentobj.prefix = encap.packet_contents.prefix
                 newcontentobj.name = encap.packet_contents.name
+                newcontentobj.seg_num = encap.packet_contents.seg_num
                 newcontentobj.payload = encap.packet_contents.payload
                 
                 # create a new PacketEncap

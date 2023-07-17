@@ -41,25 +41,20 @@ class Worker(Thread):
     def run(self):
         
         # wait for the initial delay
-        time.sleep(settings.IOTGWAPP_START_DELAY_SEC)
+        time.sleep(settings.SERVER_START_DELAY_SEC)
         
         # create face registration message
         facereg = FaceRegistration()
-        facereg.face_id = settings.IOTGWAPP_FACE_ID
+        facereg.face_id = settings.SERVER_FACE_ID
         facereg.face_type = common.FaceType.FACETYPE_APP
-        facereg.face_module_name = settings.IOTGWAPP_MODULE_NAME
-        facereg.prefix_served = ''
-        for i in range(len(settings.IOTGWAPP_SERVED_PREFIXES)):
-            if i == 0
-                facereg.prefix_served = facereg.prefix_served + settings.IOTGWAPP_SERVED_PREFIXES[i]
-            else:
-                facereg.prefix_served = facereg.prefix_served + ':' + settings.IOTGWAPP_SERVED_PREFIXES[i]
+        facereg.face_module_name = settings.SERVER_MODULE_NAME
+        facereg.prefix_served = settings.SERVER_DATA_REQ_PREFIX
 
         # encapsulate registration message
         encap = common.PacketEncap()
         encap.from_direction = common.DirectionType.FROM_APP
-        encap.from_direction_module_name = settings.IOTGWAPP_MODULE_NAME
-        encap.from_face_id = settings.IOTGWAPP_FACE_ID
+        encap.from_direction_module_name = settings.SERVER_MODULE_NAME
+        encap.from_face_id = settings.SERVER_FACE_ID
         encap.to_direction = common.DirectionType.TO_CCN
         encap.packet_contents = facereg
 
@@ -82,58 +77,39 @@ class Handler:
         if type(encap.packet_contents) is Interest:
 
             # log
-            logmsg = settings.IOTGWAPP_MODULE_NAME + ':Interest received '
+            logmsg = settings.SERVER_MODULE_NAME + ':Interest received '
             common.log_activity(logmsg)
 
             # check if it is for a served prefix
-            found = False
-            for prefix in settings.IOTGWAPP_SERVED_PREFIXES:
-                if prefix == encap.packet_contents.prefix:
-                    found = True
-                    break
-            
-            # if a not served prefix, return
-            if !found:
+            if encap.packet_contents.prefix == settings.SERVER_DATA_REQ_PREFIX:
                 
-                # log
-                logmsg = settings.IOTGWAPP_MODULE_NAME + ':Unserved prefix '
-                common.log_activity(logmsg)
+                # build Content Obj to return
+                contentobjmsg = ContentObject()
+                contentobjmsg.prefix = encap.packet_contents.prefix
+                contentobjmsg.name = encap.packet_contents.name
+                contentobjmsg.seg_num = encap.packet_contents.seg_num
+                contentobjmsg.payload = 'payload contents ' + str(random.randint(1000, 10000))
                 
-                return
-            
-            # generate random value to return
-            valstr = 'no-val'
-            for i in range(len(settings.IOTGWAPP_DATA_HOSTED)):
-                if settings.IOTGWAPP_DATA_HOSTED[i] == encap.packet_contents.name:
-                    upper, lower = settings.IOTGWAPP_DATA_RANGES[i].split(':')
-                    upper = float(upper)
-                    lower = float(lower)
-                    valfloat = round(random.uniform(lower, upper),2)
-                    valstr = '%.2f' % valfloat
-                    break
-            
-            # build Content Obj to return
-            contentobjmsg = ContentObject()
-            contentobjmsg.prefix = encap.packet_contents.prefix
-            contentobjmsg.name = encap.packet_contents.name
-            contentobjmsg.payload = valstr
-            
-            # encapsulate created message
-            encap = common.PacketEncap()
-            encap.from_direction = common.DirectionType.FROM_APP
-            encap.from_module_name = settings.IOTGWAPP_MODULE_NAME
-            encap.from_face_id = settings.IOTGWAPP_FACE_ID
-            encap.to_direction = common.DirectionType.TO_CCN
-            encap.packet_contents = contentobjmsg
+                # encapsulate created message
+                encap = common.PacketEncap()
+                encap.from_direction = common.DirectionType.FROM_APP
+                encap.from_module_name = settings.SERVER_MODULE_NAME
+                encap.from_face_id = settings.SERVER_FACE_ID
+                encap.to_direction = common.DirectionType.TO_CCN
+                encap.packet_contents = contentobjmsg
         
-            # lock and call function to send to CCN
-            with common.system_lock:
-                dispatch(encap)    
+                # lock and call function to send to CCN
+                with common.system_lock:
+                    dispatch(encap)    
+            else:
+                # log
+                logmsg = settings.SERVER_MODULE_NAME + ':Unserved prefix '
+                common.log_activity(logmsg)
 
         # unknown message
         else:
             # log
-            logmsg = settings.TEMPREADER_MODULE_NAME + ':Unknown message received to sent '
+            logmsg = settings.SERVER_MODULE_NAME + ':Unknown message received to sent '
             common.log_activity(logmsg)
             return
         

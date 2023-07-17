@@ -117,6 +117,7 @@ class Handler:
             contentobjmsg = ContentObject()
             contentobjmsg.prefix = encap.packet_contents.prefix
             contentobjmsg.name = encap.packet_contents.name
+            contentobjmsg.seg_num = encap.packet_contents.seg_num
             contentobjmsg.payload = valstr
             
             # encapsulate created message
@@ -134,7 +135,7 @@ class Handler:
         # unknown message
         else:
             # log
-            logmsg = settings.TEMPREADER_MODULE_NAME + ':Unknown message received to sent '
+            logmsg = settings.IOTGWAPP_MODULE_NAME + ':Unknown message received '
             common.log_activity(logmsg)
             return
         

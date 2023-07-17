@@ -1,11 +1,12 @@
-# Implementation of a dummy temperature reading application
+# Implementation of a simple content downloading application
 #
 # @author: Asanga Udugama (adu@comnets.uni-bremen.de)
-# @date: 26-jun-2023
+# @date: 17-jul-2023
 #
 
 import sys
 import time
+import random
 from threading import Thread
 from threading import Lock
 import settings
@@ -23,7 +24,7 @@ def setup(dispatch):
     handler = Handler(dispatch)
 
     # log
-    logmsg = settings.TEMPREADER_MODULE_NAME + ' : Setup completed, operation started'        
+    logmsg = settings.CLIENT_MODULE_NAME + ' : Setup completed, operation started'        
     with common.system_lock:
         common.log_activity(logmsg)
 
@@ -47,20 +48,20 @@ class Worker(Thread):
         try:
 
             # wait for the initial delay
-            time.sleep(settings.TEMPREADER_START_DELAY_SEC)
+            time.sleep(settings.CLIENT_START_DELAY_SEC)
         
             # create face registration message
             facereg = common.FaceRegistration()
-            facereg.face_id = settings.TEMPREADER_FACE_ID
+            facereg.face_id = settings.CLIENT_FACE_ID
             facereg.face_type = common.FaceType.FACETYPE_APP
-            facereg.face_module_name = settings.TEMPREADER_MODULE_NAME
+            facereg.face_module_name = settings.CLIENT_MODULE_NAME
             facereg.prefix_served = None
         
             # encapsulate registration message
             encap = common.PacketEncap()
             encap.from_direction = common.DirectionType.FROM_APP
-            encap.from_direction_module_name = settings.TEMPREADER_MODULE_NAME
-            encap.from_face_id = settings.TEMPREADER_FACE_ID
+            encap.from_direction_module_name = settings.CLIENT_MODULE_NAME
+            encap.from_face_id = settings.CLIENT_FACE_ID
             encap.to_direction = common.DirectionType.TO_CCN
             encap.packet_contents = facereg
 
@@ -69,25 +70,45 @@ class Worker(Thread):
                 self.dispatch(encap)
 
             while True:
-            
-                # create interest as if it was received from the socket
-                interestmsg = common.Interest()
-                interestmsg.prefix = settings.TEMPREADER_DATA_REQ_PREFIX
-                interestmsg.name = settings.TEMPREADER_DATA_NAME
+                
+                # setup new content download details
+                data_name_prefixes = settings.CLIENT_DATA_NAME_PREFIXES.split(':')
+                data_name_suffix_range = settings.CLIENT_DATA_NAME_SUFFIX_RANGE.split(':')
+                data_name_seg_range = settings.CLIENT_DATA_NAME_SEGMENT_RANGE.split(':')                
+                rnd_data_name_prefix_index = random.randint(0, int(data_name_prefixes) - 1)
+                rnd_data_name_suffix_val = random.randint(int(data_name_suffix_range[0]), int(data_name_suffix_range[1]))
+                rnd_data_name_total_seg_nums = random.randint(int(data_name_seg_range[0]), int(data_name_seg_range[1]))
+                filename = data_name_prefixes[rnd_data_name_prefix_index] + '-' + str(rnd_data_name_suffix_val)
+                seg_num = 0
+                
+                while seg_num < rnd_data_name_total_seg_nums:
+                    
+                    # create interest as if it was received from the socket
+                    interestmsg = common.Interest()
+                    interestmsg.prefix = settings.CLIENT_DATA_REQ_PREFIX
+                    interestmsg.name = filename
+                    interestmsg.seg_num = seg_num
         
-                # encapsulate created message
-                encap = common.PacketEncap()
-                encap.from_direction = common.DirectionType.FROM_APP
-                encap.from_direction_module_name = settings.TEMPREADER_MODULE_NAME
-                encap.from_face_id = settings.TEMPREADER_FACE_ID
-                encap.to_direction = common.DirectionType.TO_CCN
-                encap.packet_contents = interestmsg
+                    # encapsulate created message
+                    encap = common.PacketEncap()
+                    encap.from_direction = common.DirectionType.FROM_APP
+                    encap.from_direction_module_name = settings.CLIENT_MODULE_NAME
+                    encap.from_face_id = settings.CLIENT_FACE_ID
+                    encap.to_direction = common.DirectionType.TO_CCN
+                    encap.packet_contents = interestmsg
         
-                # lock and call function to process message
-                with common.system_lock:
-                    self.dispatch(encap)    
+                    # lock and call function to process message
+                    with common.system_lock:
+                        self.dispatch(encap)
 
-                time.sleep(settings.TEMPREADER_DATA_REQ_INTERVAL_SEC)
+                    # increment the segment number
+                    seg_num = seg_num + 1
+
+                    # wait before requesting next segment
+                    time.sleep(settings.CLIENT_SEGMENT_REQ_INTERVAL_SEC)
+
+                # wait before next content download
+                time.sleep(settings.CLIENT_SEGMENT_REQ_INTERVAL_SEC)
 
         except Exception as e:
             print(e)

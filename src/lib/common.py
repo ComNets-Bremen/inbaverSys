@@ -131,12 +131,14 @@ class Interest:
     def __init__(self):
         self.prefix = None
         self.name = None
+        self.seg_num = None
 
 
 class ContentObject:
     def __init__(self):
         self.prefix = None
         self.name = None
+        self.seg_num = None
         self.payload = None
 
 

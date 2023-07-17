@@ -74,7 +74,8 @@ class Worker(Thread):
                 interestmsg = common.Interest()
                 interestmsg.prefix = settings.TEMPREADER_DATA_REQ_PREFIX
                 interestmsg.name = settings.TEMPREADER_DATA_NAME
-        
+                interestmsg.seg_num = 0
+
                 # encapsulate created message
                 encap = common.PacketEncap()
                 encap.from_direction = common.DirectionType.FROM_APP

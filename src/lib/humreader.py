@@ -74,6 +74,7 @@ class Worker(Thread):
                 interestmsg = common.Interest()
                 interestmsg.prefix = settings.HUMREADER_DATA_REQ_PREFIX
                 interestmsg.name = settings.HUMREADER_DATA_NAME
+                interestmsg.seg_num = 0
         
                 # encapsulate created message
                 encap = common.PacketEncap()
