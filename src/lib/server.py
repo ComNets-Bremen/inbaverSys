@@ -1,9 +1,8 @@
-# Implementation of a dummy IoT gateway application
-# that can store sensor data and respond to requests
-# for the stored sensor data.
+# Implementation of a content server application
+# that can respond to requests for content.
 #
 # @author: Asanga Udugama (adu@comnets.uni-bremen.de)
-# @date: 26-jun-2023
+# @date: 13-jul-2023
 #
 
 import sys

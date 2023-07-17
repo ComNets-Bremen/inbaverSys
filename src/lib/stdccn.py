@@ -5,6 +5,7 @@
 #
 
 import sys
+import time
 from threading import Thread
 from threading import Lock
 sys.path.append('./lib')
@@ -16,14 +17,19 @@ facelist = []
 
 # setup the ccn module & start the handler thread
 def setup(dispatch):
-    
+
     # start worker that performs general maintenance work (cache entry expiration)
     w = Worker(dispatch)
     w.start()
 
     # create the handler
     handler = Handler(dispatch)
-    
+
+    # log
+    logmsg = settings.STDCCN_MODULE_NAME + ' : Setup completed, operation started'        
+    with common.system_lock:
+        common.log_activity(logmsg)
+
     # return the handler for main to call the 
     # handle_msg function
     return handler
@@ -36,11 +42,24 @@ class Worker(Thread):
     # constructor to get all parameters
     def __init__(self, dispatch):
         self.dispatch = dispatch
+        super().__init__()
+
 
     def run(self):
+
+        try:
+            # log
+            logmsg = settings.STDCCN_MODULE_NAME + ' : Worker thread started'        
+            with common.system_lock:
+                common.log_activity(logmsg)
+
+            while True:
                 
-        while True:
-            time.sleep(10)
+                    # just loop endlessly
+                    time.sleep(5)
+                
+        except Exception as e:
+            print(e)
 
 
 # handler to recive app packet
@@ -51,12 +70,14 @@ class Handler:
         self.dispatch = dispatch
     
     # function handles when data received by this app
-    def handle_msg(encap):
+    def handle_msg(self, encap):
+        global facelist
 
         # process FaceRegistration message
         if type(encap.packet_contents) is common.FaceRegistration:
+
             # log
-            logmsg = settings.CCN_LAYER + ':FaceRegistration message received '
+            logmsg = settings.STDCCN_MODULE_NAME + ' : FaceRegistration message received '
             common.log_activity(logmsg)
             
             # save face info
@@ -68,14 +89,15 @@ class Handler:
             
 
         # process Interest message
-        else if type(encap.packet_contents) is common.Interest:
+        elif type(encap.packet_contents) is common.Interest:
+
             # log
-            logmsg = settings.CCN_LAYER + ':Interest message received:From ' + encap.from_face_id
+            logmsg = settings.STDCCN_MODULE_NAME + ' : Interest message received:From ' + encap.from_face_id
             common.log_activity(logmsg)
             
             # loop around the face list and send Interest to all (except the arrival face)
             for faceinfo in facelist:
-                if encap.from_module_name == faceinfo.face_module_name
+                if encap.from_module_name == faceinfo.face_module_name \
                    and encap.from_face_id == faceinfo.face_id:
                     continue
                 
@@ -87,24 +109,25 @@ class Handler:
                 # create a new PacketEncap
                 newencap = common.PacketEncap()
                 newencap.from_direction = common.DirectionType.FROM_CCN
-                newencap.from_module_name = common.CCN_LAYER
+                newencap.from_module_name = settings.CCN_LAYER
                 newencap.to_direction = common.DirectionType.TO_LINK
                 newencap.to_module_name = faceinfo.face_module_name
                 newencap.to_face_id = faceinfo.face_id
                 newencap.packet_contents = newinterest
                 
                 # send packet out
-                dispatch(newencap)
+                self.dispatch(newencap)
 
         # process ContentObject message
-        else if type(encap.packet_contents) is common.ContentObject:
+        elif type(encap.packet_contents) is common.ContentObject:
+
             # log
-            logmsg = settings.CCN_LAYER + ':ContentObject message received:From ' + encap.from_face_id
+            logmsg = settings.STDCCN_MODULE_NAME + ' : ContentObject message received:From ' + encap.from_face_id
             common.log_activity(logmsg)
 
             # loop around the face list and send ContentObject to all (except the arrival face)
             for faceinfo in facelist:
-                if encap.from_module_name == faceinfo.face_module_name
+                if encap.from_module_name == faceinfo.face_module_name \
                    and encap.from_face_id == faceinfo.face_id:
                     continue
                 
@@ -117,20 +140,20 @@ class Handler:
                 # create a new PacketEncap
                 newencap = common.PacketEncap()
                 newencap.from_direction = common.DirectionType.FROM_CCN
-                newencap.from_module_name = common.CCN_LAYER
+                newencap.from_module_name = settings.CCN_LAYER
                 newencap.to_direction = common.DirectionType.TO_LINK
                 newencap.to_module_name = faceinfo.face_module_name
                 newencap.to_face_id = faceinfo.face_id
                 newencap.packet_contents = newcontentobj
 
                 # send packet out
-                dispatch(newencap)
+                self.dispatch(newencap)
             
 
         # unknown message
         else:
             # log
-            logmsg = settings.CCN_LAYER + ':Unknown message received:From ' + encap.from_face_id
+            logmsg = settings.STDCCN_MODULE_NAME + ' : Unknown message received:From ' + encap.from_face_id
             common.log_activity(logmsg)
             return
         

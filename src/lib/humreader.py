@@ -5,6 +5,7 @@
 #
 
 import sys
+import time
 from threading import Thread
 from threading import Lock
 sys.path.append('./lib')
@@ -21,7 +22,12 @@ def setup(dispatch):
 
     # create the handler
     handler = Handler(dispatch)
-    
+
+    # log
+    logmsg = settings.HUMREADER_MODULE_NAME + ' : Setup completed, operation started'        
+    with common.system_lock:
+        common.log_activity(logmsg)
+
     # return the handler for main to call the 
     # handle_msg function
     return handler
@@ -34,50 +40,57 @@ class Worker(Thread):
     # constructor to get all parameters
     def __init__(self, dispatch):
         self.dispatch = dispatch
+        super().__init__()
+
 
     def run(self):
-        
-        # wait for the initial delay
-        time.sleep(settings.HUMREADER_START_DELAY_SEC)
-        
-        # create face registration message
-        facereg = FaceRegistration()
-        facereg.face_id = settings.HUMREADER_FACE_ID
-        facereg.face_module_name = settings.HUMREADER_MODULE_NAME
-        facereg.prefix_served = None
-        
-        # encapsulate registration message
-        encap = common.PacketEncap()
-        encap.from_direction = common.DirectionType.FROM_APP
-        encap.from_direction_module_name = settings.HUMREADER_MODULE_NAME
-        encap.from_face_id = settings.HUMREADER_FACE_ID
-        encap.to_direction = common.DirectionType.TO_CCN
-        encap.packet_contents = facereg
-
-        # lock and send message
-        with common.system_lock:
-            dispatch(encap)
-        
-        while True:
+        try:
             
-            # create interest as if it was received from the socket
-            interestmsg = Interest()
-            interestmsg.prefix = settings.HUMREADER_DATA_REQ_PREFIX
-            interestmsg.name = settings.HUMREADER_DATA_NAME
+            # wait for the initial delay
+            time.sleep(settings.HUMREADER_START_DELAY_SEC)
         
-            # encapsulate created message
+            # create face registration message
+            facereg = common.FaceRegistration()
+            facereg.face_id = settings.HUMREADER_FACE_ID
+            facereg.face_type = common.FaceType.FACETYPE_APP
+            facereg.face_module_name = settings.HUMREADER_MODULE_NAME
+            facereg.prefix_served = None
+        
+            # encapsulate registration message
             encap = common.PacketEncap()
             encap.from_direction = common.DirectionType.FROM_APP
             encap.from_direction_module_name = settings.HUMREADER_MODULE_NAME
             encap.from_face_id = settings.HUMREADER_FACE_ID
             encap.to_direction = common.DirectionType.TO_CCN
-            encap.packet_contents = interestmsg
-        
-            # lock and call function to process message
-            with common.system_lock:
-                dispatch(encap)    
+            encap.packet_contents = facereg
 
-            time.sleep(settings.HUMREADER_DATA_REQ_INTERVAL_SEC)
+            # lock and send message
+            with common.system_lock:
+                self.dispatch(encap)
+        
+            while True:
+            
+                # create interest as if it was received from the socket
+                interestmsg = common.Interest()
+                interestmsg.prefix = settings.HUMREADER_DATA_REQ_PREFIX
+                interestmsg.name = settings.HUMREADER_DATA_NAME
+        
+                # encapsulate created message
+                encap = common.PacketEncap()
+                encap.from_direction = common.DirectionType.FROM_APP
+                encap.from_direction_module_name = settings.HUMREADER_MODULE_NAME
+                encap.from_face_id = settings.HUMREADER_FACE_ID
+                encap.to_direction = common.DirectionType.TO_CCN
+                encap.packet_contents = interestmsg
+        
+                # lock and call function to process message
+                with common.system_lock:
+                    self.dispatch(encap)    
+
+                time.sleep(settings.HUMREADER_DATA_REQ_INTERVAL_SEC)
+
+        except Exception as e:
+            print(e)
 
 
 # handler to recive app packet
@@ -88,24 +101,24 @@ class Handler:
         self.dispatch = dispatch
 
     # function handles when data received by this app
-    def handle_msg(encap):
+    def handle_msg(self, encap):
         
         # the app only expects ContentObject messages
-        if type(encap.packet_contents) is ContentObject:
+        if type(encap.packet_contents) is common.ContentObject:
             
             # log
-            logmsg = settings.HUMREADER_MODULE_NAME + ':ContentObj received '
+            logmsg = settings.HUMREADER_MODULE_NAME + ' : ContentObj received '
             common.log_activity(logmsg)
             
             # log ContentObject values
 
-            logmsg = settings.HUMREADER_MODULE_NAME + ':Content in message:Temperature ' + encap.packet_contents.payload
+            logmsg = settings.HUMREADER_MODULE_NAME + ' : Content in message:Temperature ' + encap.packet_contents.payload
             common.log_activity(logmsg)
             
         # unknown message
         else:
             # log
-            logmsg = settings.HUMREADER_MODULE_NAME + ':Unexpected message received '
+            logmsg = settings.HUMREADER_MODULE_NAME + ' : Unexpected message received '
             common.log_activity(logmsg)
             return
         

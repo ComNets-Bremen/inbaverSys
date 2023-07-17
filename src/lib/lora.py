@@ -36,6 +36,7 @@ class Worker(Thread):
     def __init__(self, faceindex, dispatch):
         self.faceindex = faceindex
         self.dispatch = dispatch
+        super().__init__()
 
     def run(self):
         
@@ -45,6 +46,7 @@ class Worker(Thread):
         # create face registration message
         facereg = FaceRegistration()
         facereg.face_id = settings.LORA_FACE_IDS[faceindex]
+        facereg.face_type = common.FaceType.FACETYPE_LINK
         facereg.face_module_name = settings.LORA_MODULE_NAME
         facereg.prefix_served = None
         

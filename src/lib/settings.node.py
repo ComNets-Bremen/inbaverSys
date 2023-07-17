@@ -4,11 +4,13 @@
 # @date: 23-apr-2023
 #
 
+import common
+
 
 #----- general settings -----
-NODE_TYPE = NodeType.NODE
-NODE_ID = '31FE61'
-NODE_NAME = 'Daniel\'s Computer'
+NODE_TYPE = common.NodeType.NODE
+NODE_ID = 'n1'
+NODE_NAME = 'node-1 Computer'
 
 
 # SD card info
@@ -46,6 +48,19 @@ HUMREADER_DATA_REQ_INTERVAL_SEC = 30
 HUMREADER_DATA_REQ_PREFIX = 'ccn://comnets/s2120'
 HUMREADER_DATA_NAME = 'humidity'
 
+# content client download application settings
+CLIENT_MODULE_NAME = 'server'
+CLIENT_FACE_ID = 'server'
+CLIENT_START_DELAY_SEC = 20
+CLIENT_DOC_REQ_INTERVAL_SEC = 30
+CLIENT_SEGMENT_REQ_INTERVAL_SEC = 2
+CLIENT_DATA_REQ_PREFIX = 'ccn://comnets/docs'
+CLIENT_DATA_NAME_PREFIXES = 'lecture:paper:hackathon'
+CLIENT_DATA_NAME_SUFFIX_RANGE = '300:900'
+
+
+
+
 
 #----- CCN layer settings -----
 
@@ -63,12 +78,12 @@ IPOVERWLAN_FACE_IDS = ['wlan1', 'wlan2']
 IPOVERWLAN_SSID = 'ComNets'
 IPOVERWLAN_IP_COMM_PROTO = 'UDP'
 IPOVERWLAN_LOCAL_PORTS = [9000, 9001]
-IPOVERWLAN_IP_CONNECTIONS = ['192.168.1.1:9000', '192.168.1.2:9000']
+IPOVERWLAN_IP_CONNECTIONS = ['127.0.0.1:10000', '127.0.0.1:10001']
 
 
 # IP over eth link settings
 IPOVERETH_MODULE_NAME = 'ipovereth'
 IPOVERETH_FACE_IDS = ['eth1', 'eth2']
 IPOVERETH_IP_COMM_PROTO = 'UDP'
-IPOVERETH_LOCAL_PORTS = [10000, 10001]
-IPOVERETH_IP_CONNECTIONS = ['10.10.1.1:10000', '10.10.1.2:10000']
+IPOVERETH_LOCAL_PORTS = [9002, 9003]
+IPOVERETH_IP_CONNECTIONS = ['127.0.0.1:10002', '127.0.01:10003']

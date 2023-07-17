@@ -4,11 +4,13 @@
 # @date: 23-apr-2023
 #
 
+import common
+
 
 #----- general settings -----
-NODE_TYPE = NodeType.NODE
-NODE_ID = '13AC4F'
-NODE_NAME = 'EE Sensor'
+NODE_TYPE = common.NodeType.ROUTER
+NODE_ID = 'r2'
+NODE_NAME = 'router-2 Computer'
 
 
 # SD card info
@@ -21,22 +23,13 @@ LOG_CONSOLE_WRITE = True
 LOG_FILE_PATH = './log.txt'
 
 # layer modules
-APP_LAYER = ['tempsensor', 'humsensor']
+APP_LAYER = []
 CCN_LAYER = 'stdccn'
-LINK_LAYER = ['lora']
+LINK_LAYER = ['ipovereth']
 
 
 
 #----- app layer settings -----
-
-# temp application settings
-TEMP_FACE_ID = 'tempsensor'
-TEMP_DATA_GEN_INTERVAL_SEC = 13
-
-
-# hum application settings
-HUM_FACE_ID = 'humsensor'
-HUM_DATA_GEN_INTERVAL_SEC = 13
 
 
 #----- CCN layer settings -----
@@ -49,8 +42,10 @@ STDCCN_CACHE_ITEM_LIMIT = 50
 
 #----- link layer settings -----
 
-# lora link settings
-LORA_MODULE_NAME = 'lora'
-LORA_FACE_IDS = ['lora1']
 
-
+# IP over eth link settings
+IPOVERETH_MODULE_NAME = 'ipovereth'
+IPOVERETH_FACE_IDS = ['eth1', 'eth2', 'eth3']
+IPOVERETH_IP_COMM_PROTO = 'UDP'
+IPOVERETH_LOCAL_PORTS = [10001, 10003, 10002]
+IPOVERETH_IP_CONNECTIONS = ['127.0.0.1:9001', '127.0.01:12001', '127.0.01:11000']

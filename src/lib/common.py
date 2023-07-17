@@ -8,7 +8,6 @@
 import sys
 from threading import Thread
 from threading import Lock
-sys.path.append('./lib')
 import settings
 from enum import Enum
 
@@ -36,25 +35,17 @@ def setup():
     node_long_id = settings.NODE_NAME
 
     # setup global lock
-    system_lock = _thread.allocate_lock()
-    
-    # log start of init
-    with system_lock:
-        log_activity('initialization started...')
+    system_lock = Lock()
 
     # mount SD card
-    if SD_CARD:
+    if settings.SD_CARD:
         try:
             sd = machine.SD()
-            os.mount(sd, SD_MOUNT_PATH)
+            os.mount(sd, settings.SD_MOUNT_PATH)
             sd_card_present = True
 
         except:
             pass
-
-    # log completion of init
-    with logging_lock:
-        log_activity('initialization completed')
 
 
 # log activity given as string
@@ -62,8 +53,18 @@ def setup():
 def log_activity(info):
     global node_id
 
+    timestr = 'no-time'
+    
+    # get time to log based on type node
+    if settings.NODE_TYPE in (NodeType.SENSOR, NodeType.IOTGATEWAY):
+        import utime
+        timestr = str(utime.ticks_ms())
+    else:
+        import time    
+        timestr = str(int(time.time()))
+
     # build log string
-    log_str = str(utime.ticks_ms()) + ' ' + node_id +  ' ' + info
+    log_str = timestr + ' ' + node_id +  ' ' + info
 
     # print to console
     if settings.LOG_CONSOLE_WRITE:
@@ -87,10 +88,13 @@ def log_activity(info):
 class NodeType(Enum):
     NODE, ROUTER, SERVER, IOTGATEWAY, SENSOR = range(1, 6)
 
-
 # enums for the cross layer direction
 class DirectionType(Enum):
     TO_APP, TO_CCN, TO_LINK, FROM_APP, FROM_CCN, FROM_LINK = range(1, 7)
+
+# enums to specify the face type
+class FaceType(Enum):
+    FACETYPE_APP, FACETYPE_LINK = range(1, 3)
 
 
 # message encapsulator class to use to pass messages between 
@@ -118,6 +122,7 @@ class ModuleInfo:
 class FaceRegistration:
     def __init__(self):
         self.face_id = None
+        self.face_type = None
         self.face_module_name = None
         self.prefix_served = None
 

@@ -23,12 +23,12 @@
 #
 
 import sys
+sys.path.append('./lib')
 from threading import Thread
 from threading import Lock
-sys.path.append('./lib')
-import definitions
 import settings
 import common
+import time
 
 # import module references
 appmodules = []
@@ -43,8 +43,13 @@ def main():
     # setup the environment
     try:
 
-        # initialize and setup environment
+        # initialize and setup basic environment
         common.setup()
+
+        # log
+        logmsg = 'main : Initialization started...'        
+        with common.system_lock:
+            common.log_activity(logmsg)
 
         # load & call setup of forwarding module
         ccn = __import__(settings.CCN_LAYER)
@@ -52,7 +57,7 @@ def main():
 
         # save references for later use
         modinfo = common.ModuleInfo()
-        modinfo.module_name = module
+        modinfo.module_name = settings.CCN_LAYER
         modinfo.module_ref = ccn
         modinfo.handler_ref = handler    
         ccnmodule = modinfo
@@ -76,7 +81,7 @@ def main():
         for module in settings.APP_LAYER:
             # import link module
             app = __import__(module)
-            
+
             # call setup to intialize and start threads
             handler = app.setup(dispatch)
 
@@ -86,6 +91,11 @@ def main():
             modinfo.module_ref = app
             modinfo.handler_ref = handler
             appmodules.append(modinfo)
+
+        # log
+        logmsg = 'main : Initialization completed'
+        with common.system_lock:
+            common.log_activity(logmsg)
 
         # wait endlessly while the rest of the threads do their work
         while True:
@@ -104,20 +114,20 @@ def dispatch(encap):
 
 
     # CCN module destined packet
-    if encap.to_direcion == common.DirectionType.TO_CCN:
+    if encap.to_direction == common.DirectionType.TO_CCN:
         ccnmodule.handler_ref.handle_msg(encap)
 
     # application module destined packet, find from list
-    else if encap.to_direcion == common.DirectionType.TO_APP:
+    elif encap.to_direction == common.DirectionType.TO_APP:
         for modinfo in appmodules:
-            if encap.to_direction_module_name == modinfo.module_name:
+            if encap.to_module_name == modinfo.module_name:
                 modinfo.handler_ref.handle_msg(encap)
                 break
 
     # link module destined packet, find from list
-    else if encap.to_direcion == common.DirectionType.TO_LINK:
+    elif encap.to_direction == common.DirectionType.TO_LINK:
         for modinfo in linkmodules:
-            if encap.to_direction_module_name == modinfo.module_name:
+            if encap.to_module_name == modinfo.module_name:
                 modinfo.handler_ref.handle_msg(encap)
                 break
 
