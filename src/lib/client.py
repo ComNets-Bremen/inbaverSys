@@ -55,7 +55,7 @@ class Worker(Thread):
             facereg.face_id = settings.CLIENT_FACE_ID
             facereg.face_type = common.FaceType.FACETYPE_APP
             facereg.face_module_name = settings.CLIENT_MODULE_NAME
-            facereg.prefix_served = ''
+            facereg.prefix_served = 'ddd'
         
             # encapsulate registration message
             encap = common.PacketEncap()
@@ -75,12 +75,18 @@ class Worker(Thread):
                 data_name_prefixes = settings.CLIENT_DATA_NAME_PREFIXES.split(':')
                 data_name_suffix_range = settings.CLIENT_DATA_NAME_SUFFIX_RANGE.split(':')
                 data_name_seg_range = settings.CLIENT_DATA_NAME_SEGMENT_RANGE.split(':')                
-                rnd_data_name_prefix_index = random.randint(0, int(data_name_prefixes) - 1)
+                rnd_data_name_prefix_index = random.randint(0, len(data_name_prefixes) - 1)
                 rnd_data_name_suffix_val = random.randint(int(data_name_suffix_range[0]), int(data_name_suffix_range[1]))
                 rnd_data_name_total_seg_nums = random.randint(int(data_name_seg_range[0]), int(data_name_seg_range[1]))
                 filename = data_name_prefixes[rnd_data_name_prefix_index] + '-' + str(rnd_data_name_suffix_val)
                 seg_num = 0
-                
+
+                # log
+                with common.system_lock:
+                    logmsg = settings.CLIENT_MODULE_NAME + ' : Downloading new content ' + settings.CLIENT_DATA_REQ_PREFIX + ' ' + filename \
+                                + ' segments ' + str(rnd_data_name_total_seg_nums)
+                    common.log_activity(logmsg)
+
                 while seg_num < rnd_data_name_total_seg_nums:
                     
                     # create interest as if it was received from the socket
@@ -96,7 +102,13 @@ class Worker(Thread):
                     encap.from_face_id = settings.CLIENT_FACE_ID
                     encap.to_direction = common.DirectionType.TO_CCN
                     encap.packet_contents = interestmsg
-        
+
+                    # log
+                    with common.system_lock:
+                        logmsg = settings.CLIENT_MODULE_NAME + ' : Generating Interest  ' + settings.CLIENT_DATA_REQ_PREFIX + ' ' + filename \
+                                + ' segment ' + str(seg_num)
+                        common.log_activity(logmsg)
+
                     # lock and call function to process message
                     with common.system_lock:
                         self.dispatch(encap)
@@ -128,18 +140,18 @@ class Handler:
         if type(encap.packet_contents) is common.ContentObject:
             
             # log
-            logmsg = settings.TEMPREADER_MODULE_NAME + ' : ContentObj received '
+            logmsg = settings.CLIENT_MODULE_NAME + ' : ContentObj received '
             common.log_activity(logmsg)
             
             # log ContentObject values
 
-            logmsg = settings.TEMPREADER_MODULE_NAME + ' : Content in message:Temperature ' + encap.packet_contents.payload
+            logmsg = settings.CLIENT_MODULE_NAME + ' : Content in message:Payload ' + encap.packet_contents.payload
             common.log_activity(logmsg)
             
         # unknown message
         else:
             # log
-            logmsg = settings.TEMPREADER_MODULE_NAME + ' : Unexpected message received '
+            logmsg = settings.CLIENT_MODULE_NAME + ' : Unexpected message received '
             common.log_activity(logmsg)
             return
         
