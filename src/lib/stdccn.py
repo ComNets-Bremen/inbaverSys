@@ -77,7 +77,7 @@ class Handler:
         if type(encap.packet_contents) is common.FaceRegistration:
 
             # log
-            logmsg = settings.STDCCN_MODULE_NAME + ' : FaceRegistration message received '
+            logmsg = settings.STDCCN_MODULE_NAME + ' : FaceRegistration message received:From ' + encap.from_face_id
             common.log_activity(logmsg)
             
             # save face info

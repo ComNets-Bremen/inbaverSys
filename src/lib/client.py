@@ -55,7 +55,7 @@ class Worker(Thread):
             facereg.face_id = settings.CLIENT_FACE_ID
             facereg.face_type = common.FaceType.FACETYPE_APP
             facereg.face_module_name = settings.CLIENT_MODULE_NAME
-            facereg.prefix_served = None
+            facereg.prefix_served = ''
         
             # encapsulate registration message
             encap = common.PacketEncap()

@@ -110,14 +110,14 @@ class Worker(Thread):
                     interestmsg = common.Interest()
                     interestmsg.prefix = msg_parts[1]
                     interestmsg.name = msg_parts[2]
-                    interestmsg.seg_num = msg_parts[3]
+                    interestmsg.seg_num = int(msg_parts[3])
                     encap.packet_contents = interestmsg
                 
                 elif msg_parts[0] == 'ContentObject':
                     contentobjmsg = ContentObject()
                     contentobjmsg.prefix = msg_parts[1]
                     contentobjmsg.name = msg_parts[2]
-                    contentobjmsg.seg_num = msg_parts[3]
+                    contentobjmsg.seg_num = int(msg_parts[3])
                     contentobjmsg.payload = msg_parts[4]
                     encap.packet_contents = contentobjmsg
 
@@ -185,7 +185,7 @@ class Handler:
             common.log_activity(logmsg)
             
             # create Interest packet to send over IP
-            msg_contents = 'Interest::' + encap.packet_contents.prefix + '::' + encap.packet_contents.name + '::' + encap.packet_contents.seg_num
+            msg_contents = 'Interest::' + encap.packet_contents.prefix + '::' + encap.packet_contents.name + '::' + str(encap.packet_contents.seg_num)
 
         # build ContentObject message
         elif type(encap.packet_contents) is common.ContentObject:
@@ -195,7 +195,7 @@ class Handler:
             common.log_activity(logmsg)
 
             # create Content Object packet to send over IP
-            msg_contents = 'Interest::' + encap.packet_contents.prefix + '::' + encap.packet_contents.name + '::' + encap.packet_contents.seg_num \
+            msg_contents = 'Interest::' + encap.packet_contents.prefix + '::' + encap.packet_contents.name + '::' + str(encap.packet_contents.seg_num) \
                                + '::' + encap.packet_contents.payload
 
         # unknown message

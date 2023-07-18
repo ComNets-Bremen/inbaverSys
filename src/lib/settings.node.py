@@ -23,7 +23,7 @@ LOG_CONSOLE_WRITE = True
 LOG_FILE_PATH = './log.txt'
 
 # layer modules
-APP_LAYER = ['tempreader', 'humreader']
+APP_LAYER = ['tempreader', 'humreader', 'client']
 CCN_LAYER = 'stdccn'
 LINK_LAYER = ['ipoverwlan', 'ipovereth']
 
@@ -58,9 +58,6 @@ CLIENT_DATA_REQ_PREFIX = 'ccn://comnets/docs'
 CLIENT_DATA_NAME_PREFIXES = 'lecture:paper:hackathon'
 CLIENT_DATA_NAME_SUFFIX_RANGE = '300:900'
 CLIENT_DATA_NAME_SEGMENT_RANGE = '100:150'
-
-
-
 
 
 #----- CCN layer settings -----

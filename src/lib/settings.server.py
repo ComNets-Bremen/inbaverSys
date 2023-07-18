@@ -21,9 +21,9 @@ LOG_CONSOLE_WRITE = True
 LOG_FILE_PATH = './log.txt'
 
 # layer modules
-APP_LAYER = ['tempreader', 'humreader']
+APP_LAYER = ['server']
 CCN_LAYER = 'stdccn'
-LINK_LAYER = ['ipoverwlan', 'ipovereth']
+LINK_LAYER = ['ipovereth']
 
 
 
